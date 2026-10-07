@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Network Packet Sniffer</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<header>
+
+    <div class="logo">
+        🛡️ Packet Sniffer
+    </div>
+
+    <div class="status">
+
+        <span id="statusDot"
+              class="dot stopped"></span>
+
+        <span id="statusText">
+            Stopped
+        </span>
+
+    </div>
+
+</header>
+
+
+<main>
+
+    <section class="hero">
+
+        <div>
+
+            <h1>
+                Network Packet Sniffer
+            </h1>
+
+            <p>
+                Monitor and analyze IPv4 network traffic
+                in real time.
+            </p>
+
+        </div>
+
+        <div class="controls">
+
+            <button
+                id="startBtn"
+                class="start"
+                onclick="startSniffer()">
+
+                ▶ Start Capture
+
+            </button>
+
+            <button
+                id="stopBtn"
+                class="stop"
+                onclick="stopSniffer()">
+
+                ■ Stop Capture
+
+            </button>
+
+            <button
+                class="reset"
+                onclick="resetData()">
+
+                ↻ Reset
+
+            </button>
+
+        </div>
+
+    </section>
+
+
+    <section class="cards">
+
+        <div class="card">
+
+            <div class="card-icon">📦</div>
+
+            <div>
+
+                <p>Total Packets</p>
+
+                <h2 id="total">0</h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-icon">🔵</div>
+
+            <div>
+
+                <p>TCP</p>
+
+                <h2 id="tcp">0</h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-icon">🟢</div>
+
+            <div>
+
+                <p>UDP</p>
+
+                <h2 id="udp">0</h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-icon">🟣</div>
+
+            <div>
+
+                <p>ICMP</p>
+
+                <h2 id="icmp">0</h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div class="card-icon">⚪</div>
+
+            <div>
+
+                <p>Other</p>
+
+                <h2 id="other">0</h2>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="dashboard">
+
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <h2>Protocol Statistics</h2>
+
+                <span>
+                    Live
+                </span>
+
+            </div>
+
+
+            <div class="progress-item">
+
+                <div class="progress-label">
+
+                    <span>TCP</span>
+
+                    <span id="tcpPercent">
+                        0%
+                    </span>
+
+                </div>
+
+                <div class="progress">
+
+                    <div
+                        id="tcpBar"
+                        class="progress-fill">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="progress-item">
+
+                <div class="progress-label">
+
+                    <span>UDP</span>
+
+                    <span id="udpPercent">
+                        0%
+                    </span>
+
+                </div>
+
+                <div class="progress">
+
+                    <div
+                        id="udpBar"
+                        class="progress-fill">
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="progress-item">
+
+                <div class="progress-label">
+
+                    <span>ICMP</span>
+
+                    <span id="icmpPercent">
+                        0%
+                    </span>
+
+                </div>
+
+                <div class="progress">
+
+                    <div
+                        id="icmpBar"
+                        class="progress-fill">
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="panel">
+
+            <div class="panel-header">
+
+                <h2>Capture Information</h2>
+
+            </div>
+
+            <div class="info">
+
+                <div>
+                    <span>Protocol</span>
+                    <strong>IPv4</strong>
+                </div>
+
+                <div>
+                    <span>Transport</span>
+                    <strong>TCP / UDP</strong>
+                </div>
+
+                <div>
+                    <span>Capture</span>
+                    <strong>Raw Socket</strong>
+                </div>
+
+                <div>
+                    <span>Log File</span>
+                    <strong>packet_log.txt</strong>
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="panel packets-panel">
+
+        <div class="panel-header">
+
+            <h2>Live Packet Traffic</h2>
+
+            <span id="packetCount">
+                0 packets
+            </span>
+
+        </div>
+
+
+        <div class="table-container">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Time</th>
+
+                        <th>Protocol</th>
+
+                        <th>Source</th>
+
+                        <th>Destination</th>
+
+                        <th>Source Port</th>
+
+                        <th>Destination Port</th>
+
+                        <th>Size</th>
+
+                        <th>Payload</th>
+
+                        <th>TTL</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="packetTable">
+
+                    <tr>
+
+                        <td
+                            colspan="9"
+                            class="empty">
+
+                            No packets captured yet.
+
+                            Click
+                            <b>Start Capture</b>
+                            to begin.
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    Network Packet Sniffer
+    • Python + Flask
+    • For authorized network monitoring only
+
+</footer>
+
+
+<script>
+
+let updateInterval = null;
+
+
+async function startSniffer() {
+
+    try {
+
+        const response =
+            await fetch("/start", {
+                method: "POST"
+            });
+
+        const data =
+            await response.json();
+
+        console.log(data.message);
+
+        updateStatus();
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to start packet capture."
+        );
+
+    }
+
+}
+
+
+async function stopSniffer() {
+
+    try {
+
+        const response =
+            await fetch("/stop", {
+                method: "POST"
+            });
+
+        const data =
+            await response.json();
+
+        console.log(data.message);
+
+        updateStatus();
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+}
+
+
+async function resetData() {
+
+    try {
+
+        await fetch("/reset", {
+            method: "POST"
+        });
+
+        updateDashboard();
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+    }
+
+}
+
+
+async function updateDashboard() {
+
+    try {
+
+        const response =
+            await fetch("/data");
+
+        const data =
+            await response.json();
+
+
+        document.getElementById("total")
+            .textContent = data.total;
+
+        document.getElementById("tcp")
+            .textContent = data.tcp;
+
+        document.getElementById("udp")
+            .textContent = data.udp;
+
+        document.getElementById("icmp")
+            .textContent = data.icmp;
+
+        document.getElementById("other")
+            .textContent = data.other;
+
+
+        document.getElementById("tcpPercent")
+            .textContent =
+            data.tcp_percentage + "%";
+
+        document.getElementById("udpPercent")
+            .textContent =
+            data.udp_percentage + "%";
+
+        document.getElementById("icmpPercent")
+            .textContent =
+            data.icmp_percentage + "%";
+
+
+        document.getElementById("tcpBar")
+            .style.width =
+            data.tcp_percentage + "%";
+
+        document.getElementById("udpBar")
+            .style.width =
+            data.udp_percentage + "%";
+
+        document.getElementById("icmpBar")
+            .style.width =
+            data.icmp_percentage + "%";
+
+
+        document.getElementById("packetCount")
+            .textContent =
+            data.total + " packets";
+
+
+        updateStatus(data.running);
+
+        updateTable(data.packets);
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Dashboard error:",
+            error
+        );
+
+    }
+
+}
+
+
+function updateStatus(running) {
+
+    const dot =
+        document.getElementById("statusDot");
+
+    const text =
+        document.getElementById("statusText");
+
+
+    if (running) {
+
+        dot.className =
+            "dot running";
+
+        text.textContent =
+            "Capturing";
+
+    }
+
+    else {
+
+        dot.className =
+            "dot stopped";
+
+        text.textContent =
+            "Stopped";
+
+    }
+
+}
+
+
+function updateTable(packets) {
+
+    const table =
+        document.getElementById("packetTable");
+
+
+    if (!packets || packets.length === 0) {
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="9" class="empty">
+                    No packets captured yet.
+                </td>
+            </tr>
+        `;
+
+        return;
+
+    }
+
+
+    table.innerHTML =
+        packets.map(packet => `
+
+        <tr>
+
+            <td>${packet.time}</td>
+
+            <td>
+                <span class="protocol ${packet.protocol.toLowerCase()}">
+                    ${packet.protocol}
+                </span>
+            </td>
+
+            <td>${packet.source}</td>
+
+            <td>${packet.destination}</td>
+
+            <td>${packet.source_port}</td>
+
+            <td>${packet.destination_port}</td>
+
+            <td>${packet.size}</td>
+
+            <td>${packet.payload}</td>
+
+            <td>${packet.ttl}</td>
+
+        </tr>
+
+    `).join("");
+
+}
+
+
+setInterval(
+    updateDashboard,
+    1000
+);
+
+
+updateDashboard();
+
+</script>
+
+</body>
+
+</html>
